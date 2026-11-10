@@ -1,5 +1,6 @@
 {
-  "_sobre": "Estilo usado quando o pedido não traz referências nem uma pasta estilo/. Troque pelos seus valores. O instalador mantém este arquivo nas atualizações.",
+  "_sobre": "Identidade visual usada quando o pedido não traz referências nem uma pasta estilo/. Na primeira vez, a etapa 0 da skill pergunta a sua e grava aqui. O instalador mantém este arquivo nas atualizações.",
+  "_configurado": false,
   "cor_texto": "#FFFFFF",
   "cor_destaque": "#DFAC16",
   "cor_texto_claro": "#111111",
@@ -9,6 +10,7 @@
   "cor_caixa": "#03332CD9",
   "cor_contorno": "#000000",
   "caixa": true,
+  "legenda_caixa": false,
   "raio": 24,
   "fonte": "Montserrat",
   "fonte_destaque": "Playfair Display",

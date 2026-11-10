@@ -27,6 +27,7 @@ ESTILO_PADRAO = {
     "cor_alerta": "#C9473A",
     "cor_apoio": "#289A8B",
     "caixa": True,
+    "legenda_caixa": False,
     "raio": 24,
     "fonte": None,
     "fonte_destaque": None,
@@ -53,10 +54,21 @@ def estilo_padrao():
     arq = PASTA_SKILL / "estilo-padrao.json"
     if arq.exists():
         try:
-            estilo.update({k: v for k, v in json.loads(arq.read_text(encoding="utf-8")).items() if not k.startswith("_")})
+            estilo.update({k: v for k, v in json.loads(arq.read_text(encoding="utf-8-sig")).items() if not k.startswith("_")})
         except json.JSONDecodeError:
             print(f"Aviso: {arq} tem erro de formatação e foi ignorado.")
     return estilo
+
+
+def identidade_configurada():
+    """False só quando o estilo-padrao.json tem "_configurado": false (instalação nova, etapa 0 pendente)."""
+    arq = PASTA_SKILL / "estilo-padrao.json"
+    try:
+        return json.loads(arq.read_text(encoding="utf-8-sig")).get("_configurado", True) is not False
+    except (OSError, json.JSONDecodeError):
+        return True
+
+
 POSICOES = {"alto", "centro", "baixo"}
 TRANSICOES = {"corte", "fade", "flash", "zoom"}
 

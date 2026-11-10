@@ -24,26 +24,55 @@ if (-not $Py) {
 }
 
 New-Item -ItemType Directory -Force -Path $Destino | Out-Null
-# Atualiza os arquivos e mantém a .venv, o seu estilo-padrao.json e as receitas que você criou.
-$EstiloArq = Join-Path $Destino 'estilo-padrao.json'
-$Guardado = $null
-if (Test-Path $EstiloArq) { $Guardado = Get-Content -Raw $EstiloArq }
-$PastaReceitas = Join-Path $Destino 'estilos'
-$Receitas = $null
-if (Test-Path $PastaReceitas) {
-    $Receitas = Join-Path ([System.IO.Path]::GetTempPath()) ('receitas-' + [guid]::NewGuid())
-    Copy-Item -Recurse -Force $PastaReceitas $Receitas
+# Atualiza os arquivos e mantém a .venv, a sua identidade visual (estilo-padrao.json, identidade.md e a
+# receita minha-identidade) e as receitas e fontes que você acrescentou. Tudo é copiado como está
+# (sem regravar o texto), para o arquivo não ganhar BOM.
+$Identidade = @('estilo-padrao.json', 'identidade.md', 'estilos\minha-identidade.json', 'estilos\minha-identidade.md')
+function Mantive($Arq) {
+    $Nome = Split-Path -Leaf $Arq
+    if ($Arq -eq 'estilo-padrao.json') { Write-Host 'Mantive o seu estilo-padrao.json.' }
+    elseif ($Arq -eq 'identidade.md') { Write-Host 'Mantive as suas notas de identidade (identidade.md).' }
+    elseif ($Arq -like 'estilos\*') { Write-Host "Mantive a sua receita $Nome." }
+    elseif ($Arq -like 'fontes\*') { Write-Host "Mantive a sua fonte $Nome." }
+}
+$Guarda = Join-Path ([System.IO.Path]::GetTempPath()) ('editar-reel-' + [guid]::NewGuid())
+New-Item -ItemType Directory -Force -Path (Join-Path $Guarda 'extras') | Out-Null
+foreach ($Arq in $Identidade) {
+    $Atual = Join-Path $Destino $Arq
+    if (Test-Path $Atual) {
+        $Copia = Join-Path $Guarda $Arq
+        New-Item -ItemType Directory -Force -Path (Split-Path $Copia) | Out-Null
+        Copy-Item -Force $Atual $Copia
+    }
+}
+foreach ($Pasta in @('estilos', 'fontes')) {
+    $Atual = Join-Path $Destino $Pasta
+    if (Test-Path $Atual) { Copy-Item -Recurse -Force $Atual (Join-Path $Guarda "extras\$Pasta") }
 }
 Get-ChildItem -Force $Destino | Where-Object { $_.Name -ne '.venv' } | Remove-Item -Recurse -Force
 Copy-Item -Recurse -Force (Join-Path $Origem '*') $Destino
-if ($Guardado) { Set-Content -NoNewline -Encoding UTF8 -Path $EstiloArq -Value $Guardado; Write-Host 'Mantive o seu estilo-padrao.json.' }
-if ($Receitas) {
-    Get-ChildItem $Receitas | ForEach-Object {
-        $Alvo = Join-Path $PastaReceitas $_.Name
-        if (-not (Test-Path $Alvo)) { Copy-Item $_.FullName $Alvo; Write-Host "Mantive a sua receita $($_.Name)." }
+# A identidade volta sempre como estava, mesmo que a versão nova traga um arquivo com o mesmo nome.
+foreach ($Arq in $Identidade) {
+    $Copia = Join-Path $Guarda $Arq
+    if (Test-Path $Copia) {
+        $Alvo = Join-Path $Destino $Arq
+        New-Item -ItemType Directory -Force -Path (Split-Path $Alvo) | Out-Null
+        Copy-Item -Force $Copia $Alvo
+        Mantive $Arq
     }
-    Remove-Item -Recurse -Force $Receitas
 }
+# Receitas e fontes que você acrescentou; as que vêm com a skill ficam na versão nova.
+foreach ($Pasta in @('estilos', 'fontes')) {
+    $Salvos = Join-Path $Guarda "extras\$Pasta"
+    if (-not (Test-Path $Salvos)) { continue }
+    $PastaAlvo = Join-Path $Destino $Pasta
+    New-Item -ItemType Directory -Force -Path $PastaAlvo | Out-Null
+    Get-ChildItem -Force $Salvos | ForEach-Object {
+        $Alvo = Join-Path $PastaAlvo $_.Name
+        if (-not (Test-Path $Alvo)) { Copy-Item -Recurse -Force $_.FullName $Alvo; Mantive "$Pasta\$($_.Name)" }
+    }
+}
+Remove-Item -Recurse -Force $Guarda
 
 $VenvPy = Join-Path $Destino '.venv\Scripts\python.exe'
 if (-not (Test-Path $VenvPy)) { & $Py -m venv (Join-Path $Destino '.venv') }
@@ -53,3 +82,11 @@ if (-not (Test-Path $VenvPy)) { & $Py -m venv (Join-Path $Destino '.venv') }
 & $VenvPy (Join-Path $Destino 'motor\cli.py') checar
 Write-Host ''
 Write-Host 'Pronto. No Claude Code, chame /editar-reel'
+$Configurado = $true
+try { $Configurado = (Get-Content -Raw (Join-Path $Destino 'estilo-padrao.json') | ConvertFrom-Json)._configurado -ne $false } catch {}
+if (-not $Configurado) {
+    Write-Host 'No primeiro /editar-reel, o Claude pergunta a sua identidade visual (cores, fontes, imagens do seu feed'
+    Write-Host 'e o jeito do texto) antes de editar. Depois ele usa o seu visual em todos os reels.'
+} else {
+    Write-Host 'Para trocar a sua identidade visual, diga no Claude Code: configura minha identidade visual'
+}

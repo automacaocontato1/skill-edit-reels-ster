@@ -3,7 +3,7 @@
   python motor/cli.py checar
   python motor/cli.py transcrever VIDEO [VIDEO2 ...] [--pasta NOME] [--modelo small]
   python motor/cli.py segmentar PASTA [--pausa 0.45]
-  python motor/cli.py estilo PASTA_ESTILO [--aplicar PASTA]
+  python motor/cli.py estilo REFERENCIA [REFERENCIA ...] [--aplicar PASTA]   (pastas ou arquivos)
   python motor/cli.py sons
   python motor/cli.py receitas
   python motor/cli.py referencia VIDEO [--a-cada 1.0] [--pasta DESTINO]
@@ -49,6 +49,10 @@ def cmd_checar(_):
     for nome in (FONTE_TEXTO, FONTE_DESTAQUE, FONTE_ROTULO):
         arq = _da_skill(nome)
         print(f"{'OK ' if arq else 'AVISO'} fonte {nome}: {Path(arq).name if arq else 'faltando na pasta fontes/ da skill'}")
+    if P.identidade_configurada():
+        print("OK  identidade visual configurada")
+    else:
+        print("AVISO identidade visual ainda não configurada: faça a etapa 0 da SKILL.md antes do primeiro vídeo")
     sys.exit(0 if ok else 1)
 
 
@@ -83,7 +87,7 @@ def cmd_segmentar(a):
 def cmd_estilo(a):
     import json
     from estilo import ler, sugerir
-    achado = ler(a.pasta_estilo)
+    achado = ler(a.referencias)
     print(f"Imagens: {len(achado['imagens'])}  Fontes: {len(achado['fontes'])}  Textos: {len(achado['textos'])}\n")
     for im in achado["imagens"]:
         cores = ", ".join(f"{c} ({int(pc * 100)}%)" for c, pc in im["cores"])
@@ -96,6 +100,8 @@ def cmd_estilo(a):
         print(f"  cores com função definida: {achado['rotuladas']}")
     if achado["fonte_nome"]:
         print(f"  fonte citada: {achado['fonte_nome']}")
+    for v in achado["videos"]:
+        print(f"  vídeo: {Path(v).name} (rode 'referencia' nele e passe a pasta das folhas para este comando)")
     sugestao = sugerir(achado)
     print("\nEstilo sugerido:")
     print(json.dumps(sugestao, ensure_ascii=False, indent=2))
@@ -267,7 +273,7 @@ def main():
     s.add_argument("--pausa", type=float, default=0.45)
     s.set_defaults(f=cmd_segmentar)
     s = sub.add_parser("estilo")
-    s.add_argument("pasta_estilo")
+    s.add_argument("referencias", nargs="+")
     s.add_argument("--aplicar", default=None)
     s.set_defaults(f=cmd_estilo)
     sub.add_parser("sons").set_defaults(f=cmd_sons)

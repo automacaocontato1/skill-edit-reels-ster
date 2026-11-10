@@ -1,6 +1,6 @@
 ---
 name: editar-reel
-description: Edita reel falado (Instagram, TikTok, Shorts) direto no computador. Transcreve localmente, corta pausas e erros com aprovação, junta vários vídeos, alterna tela cheia, tela dividida e só gráficos conforme o conteúdo, põe legenda da fala com palavra-chave em destaque, manchete, prints anotados, cartões, sons e transições, segue receitas e referências de estilo e exporta em 9:16. Use quando pedirem "edita esse vídeo", "faz o reel", "junta esses vídeos", "corta as pausas", "coloca legenda", "divide a tela", "coloca o print", "põe um efeito sonoro", "usa esse estilo", "cria uma receita dessa referência" ou chamarem /editar-reel.
+description: Edita reel falado (Instagram, TikTok, Shorts) direto no computador. Transcreve localmente, corta pausas e erros com aprovação, junta vários vídeos, alterna tela cheia, tela dividida e só gráficos conforme o conteúdo, põe legenda da fala com palavra-chave em destaque, manchete, prints anotados, cartões, sons e transições, segue receitas e referências de estilo e exporta em 9:16. Use quando pedirem "edita esse vídeo", "faz o reel", "junta esses vídeos", "corta as pausas", "coloca legenda", "divide a tela", "coloca o print", "põe um efeito sonoro", "usa esse estilo", "cria uma receita dessa referência", "configura minha identidade visual", "muda meu estilo" ou chamarem /editar-reel.
 ---
 
 # Editar reel
@@ -15,7 +15,7 @@ Todos os comandos usam o Python da pasta `.venv` que o instalador cria dentro de
 
 Abaixo, `reel` significa essa linha inteira. Caminhos com espaço vão entre aspas.
 
-Na primeira vez, rode `reel checar`. Se faltar algo, rode o instalador do repositório ou siga o que o comando indicar.
+Na primeira vez, rode `reel checar`. Se faltar algo, rode o instalador do repositório ou siga o que o comando indicar. Se ele avisar que a identidade visual não está configurada, comece pela etapa 0.
 
 ## Organização de arquivos que a pessoa pode usar
 
@@ -33,6 +33,87 @@ meu-reel/
 - Se a pessoa disser a ordem em texto, a ordem dela vale mais que o nome do arquivo.
 
 ## Fluxo
+
+### 0. Identidade visual (primeira vez)
+Leia o `estilo-padrao.json` desta skill. Faça esta etapa antes de editar enquanto ele tiver `"_configurado": false`, e também quando a pessoa pedir "configura minha identidade visual" ou "muda meu estilo". Sem a chave `_configurado`, a identidade já está configurada (instalação antiga): siga para o passo 1.
+
+Diga em uma linha que, antes do primeiro vídeo, vai aprender o visual dela e que isso acontece uma vez só, ou que, se ela preferir, segue com o visual padrão da skill (verdes e dourado) e ela configura depois. Se a identidade já existe ("muda meu estilo"), mostre antes o que está salvo e aceite "mantém" em qualquer pergunta.
+
+**Se a pessoa preferir o padrão** ("pula", "usa o padrão", "depois eu vejo"): grave só `"_configurado": true` no `estilo-padrao.json`, sem mudar mais nada e sem criar receita nem `identidade.md`. Diga em uma linha que seguiu com o visual padrão e que ela pode pedir "configura minha identidade visual" quando quiser. Siga para o passo 1.
+
+**Perguntas**, uma por vez, nesta ordem. Qualquer uma pode ficar sem resposta: o que ficar vazio continua como está.
+1. **Referências visuais.** Imagens do feed, posts, logo, paleta, capas ou vídeos dela. Ela pode arrastar os arquivos para o terminal ou indicar uma pasta.
+2. **Cores.** Principal, destaque, fundo claro e fundo escuro. Vale hex, nome da cor ("verde-musgo") ou "tira das imagens".
+3. **Fontes.** O nome da fonte, o arquivo `.ttf`/`.otf` ou "não sei".
+4. **Composição.** Legenda com caixa atrás ou solta; em maiúsculas ou não; fundo claro ou escuro na maior parte do vídeo; ritmo calmo ou dinâmico.
+5. **O que evitar.** Cores, fontes, efeitos ou formatos que ela não quer ver.
+
+**Análise das referências**
+- Cores: `reel estilo ARQUIVO_OU_PASTA [...]` mede as cores dominantes de cada imagem e lê os hex de arquivos `.txt` e `.md`.
+- Vídeo: `reel referencia VIDEO` gera as folhas de quadros. Abra as folhas e passe a pasta delas para o `reel estilo` (ignore o cinza da moldura e o vermelho da marca de tempo).
+- Abra cada imagem e anote o que a cor não mede: peso da fonte (fina, regular, negrito, extra negrito), caixa atrás do texto (cor e transparência), cantos (retos, arredondados, pílula), espaçamento (justo ou arejado), contraste (forte ou suave) e posição do texto (topo, centro, terço de baixo).
+- Nome de cor: escolha o tom e mostre o hex.
+- Fonte vista numa imagem: diga qual fonte livre (licença OFL) é a mais parecida no desenho e avise que é uma aproximação. Se ela não vier com a skill (Montserrat, Playfair Display, DM Sans), peça o arquivo, que a pessoa baixa em fonts.google.com. Fonte paga só entra com o arquivo que a pessoa já tem; nunca procure nem baixe fonte paga.
+- Arquivo de fonte: copie para a pasta `fontes/` desta skill (o instalador mantém as fontes acrescentadas) e use o nome do arquivo, sem a extensão, na chave. Com vários pesos da mesma família, use o mais forte (ExtraBold ou Bold) em `fonte`.
+
+**Como as respostas viram estilo**
+
+| Resposta | Onde entra |
+|---|---|
+| destaque | `cor_destaque` (palavra-chave sobre fundo escuro e sobre o vídeo) |
+| principal | `cor_destaque_claro` (palavra-chave sobre fundo claro) e, se for escuro, `fundos.escuro-2` |
+| fundo escuro | `fundos.escuro-1` e `cor_caixa` (o mesmo hex com `D9` no fim, 85%) |
+| fundo claro | `fundos.claro-1` |
+| terceira cor das referências (linhas, ícones, checks) | `cor_apoio`; sem ela, o principal mais claro |
+| cor do texto | `cor_texto` no escuro (quase sempre `#FFFFFF`) e `cor_texto_claro` no claro (quase preto) |
+| fonte do texto | `fonte` |
+| fonte de destaque (itálico, serifa, manuscrita) | `fonte_destaque` |
+| fonte de rótulos, pílulas e selo | `fonte_rotulo` |
+| legenda com caixa ou solta | `legenda_caixa` e `caixa`: `true` ou `false` |
+| maiúsculas | `maiusculas` |
+| cantos | `raio` (retos 8, arredondados 24, bem redondos 40) e o `raio` dos cartões da receita |
+| fundo predominante | `fundos.padrao` da receita: `escuro-1` ou `claro-1` |
+| ritmo | `legenda.palavras_por_bloco` da receita: calmo 3, dinâmico 2 |
+
+Os fundos ficam em `"fundos"` do `estilo-padrao.json`, por papel: `escuro-1`, `escuro-2`, `escuro-3`, `claro-1`, `claro-2`, `claro-3`. Quando as referências mostram mais de um fundo de cada lado, use os delas. Sem isso, derive do mesmo tom: `escuro-2` um pouco mais claro que o `escuro-1` (ou o principal, se for escuro), `escuro-3` mais fundo, quase preto; `claro-2` e `claro-3` um pouco mais escuros e quentes que o `claro-1`. Calcule os hex com Python (mistura de cores). O fundo `alerta` continua o padrão, a não ser que a pessoa peça outro.
+
+**Confirme antes de salvar.** Mostre uma tabela com cada papel, o hex e de onde ele veio (resposta, nome da imagem ou derivado), mais as fontes (avisando qual é aproximação) e a composição. Espere a confirmação e ajuste o que ela pedir.
+
+**Salve**, na pasta desta skill:
+1. `estilo-padrao.json`: cores, `fundos`, fontes, `caixa`, `legenda_caixa`, `maiusculas`, `raio` e `"_configurado": true`. Mantenha o `_sobre` e as chaves que não mudaram.
+2. `estilos/minha-identidade.json` (a receita, só com as seções da tabela acima) e `estilos/minha-identidade.md` (a descrição, no formato das outras receitas):
+   ```json
+   {
+     "_sobre": "Receita da identidade visual da pessoa, criada na etapa 0. Descrição em minha-identidade.md.",
+     "fundos": {"padrao": "claro-1", "brilho": 0.12, "arco": false},
+     "cartoes": {
+       "escuro": {"cor": "#<escuro-2>E6", "borda": "#<apoio>66", "raio": 28},
+       "claro": {"cor": "#FFFFFFE0", "borda": "#FFFFFFFF", "raio": 32}
+     },
+     "prints": {"borda": 0, "cor_borda": "#<apoio>", "raio": 28, "inclinacao": 0},
+     "manchete": {"modelo": "solta"},
+     "legenda": {"palavras_por_bloco": 2}
+   }
+   ```
+3. `identidade.md`: o que as imagens mostraram e o que evitar, que o passo 4 lê em todo vídeo:
+   ```markdown
+   # Identidade visual
+
+   ## Referências analisadas
+   - feed-01.png: fundo areia, títulos em negrito grande e soltos, cantos bem redondos.
+
+   ## Composição
+   - Legenda: solta, sem caixa, em minúsculas.
+   - Fundo predominante: claro. Escuro só em virada ou problema.
+   - Ritmo: calmo. Blocos de 3 palavras, formato trocando a cada 3 a 5 s.
+   - Texto: extra negrito nos títulos, espaçamento arejado, contraste forte, texto no terço de baixo.
+   - Fontes: DM Sans no texto (aproximação da fonte vista no feed).
+
+   ## Evitar
+   - Vermelho fora do fundo de alerta.
+   ```
+
+Diga em uma linha o que ficou salvo. Se a pessoa trouxe um vídeo, siga para o passo 1; se ela só pediu para configurar, pare aqui.
 
 ### 1. Entender o pedido
 Pergunte só o que faltar, uma pergunta por vez:
@@ -63,8 +144,8 @@ Se a frase mais forte está no meio, proponha abrir por ela: preencha `"ordem": 
 **Espere a aprovação.** Só então marque `"manter": false` nos trechos que saem.
 
 ### 4. Direção visual e mapa visual (obrigatório)
-1. Leia `direcao-visual.md` (nesta skill). Ele decide formato, peças, ritmo, cores e sons.
-2. Escolha a receita pelo assunto (`reel receitas` lista as que existem) e preencha `"receita"` no plano.
+1. Leia `direcao-visual.md` e, se existir, `identidade.md` (os dois nesta skill). A direção visual decide formato, peças, ritmo, cores e sons; a `identidade.md` diz o que a pessoa prefere e o que evitar, e vale mais quando as duas discordarem.
+2. Escolha a receita pelo assunto (`reel receitas` lista as que existem) e preencha `"receita"` no plano. Com `estilos/minha-identidade.json`, ela é a base, e outra receita entra só por seção, quando o assunto pedir: `{"base": "minha-identidade", "prints": "print-anotado"}`.
 3. Para cada trecho mantido, preencha `"formato"` (A, B ou C) e, em B e C, `"fundo"` quando fugir do padrão da receita. Monte manchete, peças e sons.
 4. Rode `reel mapa PASTA` e mostre a tabela à pessoa, com a receita e os avisos de ritmo.
 5. Liste junto as imagens que faltam (seção "Imagens" abaixo).
@@ -78,7 +159,7 @@ Tudo que entra no vídeo fica preso a um trecho (`"trecho": id`), então continu
 
 **Trechos** (em `"trechos"`):
 - `"formato"`: `A` tela cheia (padrão), `B` tela dividida, `C` só gráficos.
-- `"fundo"` (B e C): `verde-profundo`, `verde-medio`, `verde-noite`, `off-white`, `areia`, `bege`, `alerta` ou `#RRGGBB`.
+- `"fundo"` (B e C): um papel da identidade gravada na etapa 0 (`escuro-1` a `escuro-3`, `claro-1` a `claro-3`), `verde-profundo`, `verde-medio`, `verde-noite`, `off-white`, `areia`, `bege`, `alerta` ou `#RRGGBB`.
 - `"painel"` (B): altura do painel da pessoa, de 0.30 a 0.50 (padrão 0.40; com print `grande` no trecho, 0.33).
 - `"zoom"` (A): 1.0 a 1.3. Sem o campo, alterna 1.0 e 1.12. Use 1.2 na frase mais forte (até 2 por vídeo).
 - `"inclinacao"` (A): graus, -4 a 4. Só numa virada, no máximo 1 por vídeo.
@@ -171,11 +252,13 @@ Ordem de prioridade, da mais forte para a mais fraca:
 1. O que a pessoa pedir no texto ("destaque em vermelho").
 2. A pasta `estilo/` do projeto, ou uma pasta de referência que ela indicar.
 3. A receita do plano.
-4. O `estilo-padrao.json` desta skill (o visual de sempre da pessoa).
+4. O `estilo-padrao.json` desta skill (a identidade da pessoa, gravada na etapa 0).
+
+O que a `identidade.md` manda evitar vale em todos os vídeos, a não ser que a pessoa peça o contrário no próprio pedido.
 
 Com uma pasta de estilo: rode `reel estilo PASTA_ESTILO --aplicar PASTA`, abra as imagens e ajuste o `"estilo"` do plano (cores, fonte, caixa). Diga em uma linha o estilo que vai usar antes de renderizar.
 
-Chaves de `"estilo"`: `cor_texto`, `cor_destaque` (fundo escuro e vídeo), `cor_texto_claro`, `cor_destaque_claro` (fundo claro), `cor_alerta`, `cor_apoio`, `cor_caixa`, `caixa`, `raio`, `fonte`, `fonte_destaque`, `fonte_rotulo`, `tamanho`, `maiusculas`, `fundos` (nomes extras: `{"azul-noite": "#0B1F33"}`), `ajuste_pecas` (px a mais ou a menos nos textos da tela de cima, manchete e cartões, sem mexer na legenda), `cor_robo` (cor de detalhe do robô e do ponto que corre nas conexões). O que ficar vazio vem do `estilo-padrao.json`. Dourado nunca sobre fundo claro.
+Chaves de `"estilo"`: `cor_texto`, `cor_destaque` (fundo escuro e vídeo), `cor_texto_claro`, `cor_destaque_claro` (fundo claro), `cor_alerta`, `cor_apoio`, `cor_caixa`, `caixa` (caixa atrás dos textos do modo resumo), `legenda_caixa` (caixa na `cor_caixa` atrás de cada linha da legenda da fala; as cores do texto passam a seguir a caixa), `raio`, `fonte`, `fonte_destaque`, `fonte_rotulo`, `tamanho`, `maiusculas` (legenda da fala e textos do resumo em maiúsculas; em C a legenda já é sempre em maiúsculas), `fundos` (nomes extras: `{"azul-noite": "#0B1F33"}`), `ajuste_pecas` (px a mais ou a menos nos textos da tela de cima, manchete e cartões, sem mexer na legenda), `cor_robo` (cor de detalhe do robô e do ponto que corre nas conexões). O que ficar vazio vem do `estilo-padrao.json`. Dourado nunca sobre fundo claro.
 
 ### 6. Validar
 `reel validar PASTA`
@@ -218,7 +301,9 @@ Quando a pessoa mandar um vídeo de referência e pedir "cria uma receita dessa 
 - "ícone animado nessa palavra": cartão `icones` ancorado na palavra (em tela cheia, `acima_da_palavra`).
 - "um robô marcando a lista": `"robo": true` na lista.
 - "sem cena vazia": em B e C, toda área de peças sem peça ganha um cartão `icones` ligado à palavra de ênfase.
-- "muda o meu estilo padrão": edite o `estilo-padrao.json` da skill (só quando a pessoa pedir).
+- "muda meu estilo" ou "configura minha identidade visual": etapa 0.
+- "salva esse estilo como padrão": leve o `"estilo"` do plano para o `estilo-padrao.json` da skill (só quando a pessoa pedir).
+- "legenda com caixa": `"estilo": {"legenda_caixa": true}`. "Tudo em maiúsculas": `"maiusculas": true`.
 - Rosto cortado: `"zoom": {"altura_rosto": 0.3}` (0 é o topo, 1 é a base; vale também para o painel do formato B).
 
 ## Regras gerais

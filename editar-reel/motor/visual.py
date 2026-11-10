@@ -75,7 +75,7 @@ def _ler_receita(nome):
     arq = PASTA_RECEITAS / f"{nome}.json"
     if not arq.exists():
         raise ValueError(f"receita '{nome}' não existe. Disponíveis: {', '.join(listar_receitas()) or 'nenhuma'}.")
-    return json.loads(arq.read_text(encoding="utf-8"))
+    return json.loads(arq.read_text(encoding="utf-8-sig"))
 
 
 def _mesclar(destino, origem):

@@ -1,6 +1,6 @@
-"""Lê uma pasta de referências de estilo e sugere o estilo do vídeo.
+"""Lê referências de estilo (pastas ou arquivos soltos) e sugere o estilo do vídeo.
 
-O que a pasta pode ter (tudo opcional):
+O que as referências podem ter (tudo opcional):
   - imagens (.png .jpg .jpeg .webp): prints de referência; as cores
     dominantes de cada uma são extraídas
   - fontes (.ttf .otf): a de peso mais forte vira a fonte do texto
@@ -19,6 +19,7 @@ from PIL import Image
 IMAGENS = {".png", ".jpg", ".jpeg", ".webp"}
 FONTES = {".ttf", ".otf"}
 TEXTOS = {".txt", ".md"}
+VIDEOS = {".mp4", ".mov", ".m4v", ".webm", ".mkv"}
 HEX = re.compile(r"#[0-9a-fA-F]{6}\b")
 CHAVES = {
     "cor_texto": ("texto", "letra", "text"),
@@ -48,15 +49,30 @@ def _hsv(hexa):
     return colorsys.rgb_to_hsv(r, g, b)
 
 
-def ler(pasta_estilo):
-    pasta = Path(pasta_estilo).expanduser().resolve()
-    if not pasta.is_dir():
-        raise SystemExit(f"Pasta de estilo não encontrada: {pasta}")
+def _arquivos(caminhos):
+    """Arquivos das referências: cada caminho pode ser uma pasta (lida por inteiro) ou um arquivo."""
+    if isinstance(caminhos, (str, Path)):
+        caminhos = [caminhos]
+    vistos = []
+    for c in caminhos:
+        alvo = Path(c).expanduser().resolve()
+        if alvo.is_dir():
+            novos = sorted(a for a in alvo.rglob("*") if a.is_file())
+        elif alvo.is_file():
+            novos = [alvo]
+        else:
+            raise SystemExit(f"Referência de estilo não encontrada: {alvo}")
+        vistos += [a for a in novos if a not in vistos]
+    return vistos
 
-    achado = {"imagens": [], "fontes": [], "textos": [], "rotuladas": {}, "fonte_nome": None}
-    for arq in sorted(pasta.rglob("*")):
+
+def ler(caminhos):
+    achado = {"imagens": [], "fontes": [], "textos": [], "videos": [], "rotuladas": {}, "fonte_nome": None}
+    for arq in _arquivos(caminhos):
         ext = arq.suffix.lower()
-        if ext in IMAGENS:
+        if ext in VIDEOS:
+            achado["videos"].append(str(arq))
+        elif ext in IMAGENS:
             achado["imagens"].append({"arquivo": str(arq), "cores": _cores_da_imagem(arq)})
         elif ext in FONTES:
             achado["fontes"].append(str(arq))

@@ -2,6 +2,8 @@
 
 Regras para decidir o visual de cada trecho do reel. Leia antes de montar o plano, na etapa do mapa visual. Medidas em pixels para 1080x1920. Os nomes entre crases são os campos do `plano.json` (detalhes no SKILL.md).
 
+Leia junto a `identidade.md` da skill, quando ela existir (etapa 0 do SKILL.md). O que a pessoa prefere e o que ela manda evitar valem mais que estas regras.
+
 ## 1. Princípios
 - O formato muda quando a ideia muda, não a cada corte de fala.
 - Uma peça central por vez. No máximo 2 elementos de apoio junto.
@@ -92,6 +94,7 @@ Depois da aprovação dos cortes e antes de renderizar, preencha formato, fundo 
 - Sem vírgula nem ponto final. Mantém "?" em pergunta.
 - Corrija nomes e termos técnicos antes de renderizar (Claude, IA, n8n).
 - Posição, tamanho e caixa conforme o formato (seção 2).
+- Solta por padrão. Caixa atrás de cada linha (`legenda_caixa`) e maiúsculas em todos os formatos (`maiusculas`) só quando a identidade da pessoa pedir.
 - Some quando a chamada final entra.
 
 ### Palavra-chave (`destaques`)
@@ -216,6 +219,7 @@ Use pelo nome (`"arquivo": "pop"`) ou um arquivo da pessoa.
 
 ## 14. Estilos (receitas)
 Cada receita fica em `estilos/` (`.json` que o motor lê e `.md` que descreve) e define fundos, cartões, prints, manchete e legenda. As regras deste arquivo valem para todas. `reel receitas` lista as disponíveis.
+- `minha-identidade`: a da pessoa, criada na etapa 0. Quando existe, é a base de todo vídeo.
 - `escuro-tecnico`: ferramentas de IA, bastidores técnicos, Claude, automação.
 - `claro-vidro`: explicação de processo, conteúdo educativo, comparações.
 - `print-anotado`: ferramenta real, documentação, prova, passo a passo com telas reais.
@@ -223,7 +227,8 @@ Cada receita fica em `estilos/` (`.json` que o motor lê e `.md` que descreve) e
 Escolha:
 1. O que a pessoa pedir.
 2. A pasta `estilo/` do projeto.
-3. A receita que combina com o assunto. Diga qual vai usar no mapa visual.
+3. A `minha-identidade`, quando existir, com seções de outra receita se o assunto pedir.
+4. A receita que combina com o assunto. Diga qual vai usar no mapa visual.
 
 Combinar: use a base de uma receita e uma seção de outra (ex.: `{"base": "escuro-tecnico", "prints": "print-anotado"}`). Diga a combinação no mapa visual.
 

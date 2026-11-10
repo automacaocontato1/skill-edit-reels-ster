@@ -18,7 +18,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-from visual import ALTURA, LARGURA, PAINEL_PADRAO, area_da_peca, cores_do_tema
+from visual import ALTURA, LARGURA, PAINEL_PADRAO, area_da_peca, cores_do_tema, eh_claro
 from visual import cor as _cor
 
 LARGURA_MAX_TEXTO = 900
@@ -204,12 +204,37 @@ def _gradiente(w, h, c1, c2):
     return Image.composite(Image.new("RGBA", (w, h), _cor(c2)), Image.new("RGBA", (w, h), _cor(c1)), g)
 
 
-def _desenhar_linhas(img, linhas, cy, sombra=False, entrelinha=1.08):
-    """Desenha as linhas centradas na horizontal, com o bloco centrado em cy."""
+def _caixa_das_linhas(img, linhas, metricas, alturas, cy, fundo):
+    """Uma caixa atrás de cada linha, unidas numa forma só (sem escurecer onde elas se encostam)."""
+    forma = Image.new("L", (LARGURA, ALTURA), 0)
+    d = ImageDraw.Draw(forma)
+    y = cy - sum(alturas) / 2
+    for (linha, w), (asc, desc), h in zip(linhas, metricas, alturas):
+        base = y + asc + (h - asc - desc) / 2
+        maior = max(linha, key=lambda p: p["f"].size)["f"]
+        alto = -maior.getbbox("H", anchor="ls")[1]
+        px, py = int(maior.size * 0.42), int(maior.size * 0.26)
+        topo, fundo_y = base - alto - py, base + desc * 0.7 + py
+        raio = min(fundo["raio"], (fundo_y - topo) / 2)
+        d.rounded_rectangle([(LARGURA - w) / 2 - px, topo, (LARGURA + w) / 2 + px, fundo_y], radius=raio, fill=255)
+        y += h
+    cor_caixa = fundo["cor"]
+    camada = Image.new("RGBA", (LARGURA, ALTURA), cor_caixa[:3] + (255,))
+    camada.putalpha(forma.point(lambda v: v * cor_caixa[3] // 255))
+    img.alpha_composite(camada)
+
+
+def _desenhar_linhas(img, linhas, cy, sombra=False, entrelinha=1.08, fundo=None):
+    """Desenha as linhas centradas na horizontal, com o bloco centrado em cy.
+
+    fundo: {"cor": rgba, "raio": px} desenha uma caixa atrás de cada linha.
+    """
     camada = Image.new("RGBA", (LARGURA, ALTURA), (0, 0, 0, 0))
     d = ImageDraw.Draw(camada)
     metricas = [(max(p["f"].getmetrics()[0] for p in ln), max(p["f"].getmetrics()[1] for p in ln)) for ln, _ in linhas]
     alturas = [(a + b) * entrelinha for a, b in metricas]
+    if fundo:
+        _caixa_das_linhas(img, linhas, metricas, alturas, cy, fundo)
     y = cy - sum(alturas) / 2
     for (linha, w), (asc, desc), h in zip(linhas, metricas, alturas):
         base = y + asc + (h - asc - desc) / 2
@@ -271,15 +296,33 @@ def _juntar(marcadas):
 
 # Legenda da fala
 
+def _legenda_maiuscula(estilo, formato):
+    """Em C a legenda é sempre em maiúsculas; nos outros formatos, quando o estilo pede."""
+    return formato == "C" or bool(estilo.get("maiusculas"))
+
+
 def desenhar_legenda(bloco, estilo, destino, ativa=None):
-    """Bloco da legenda. Palavras depois da ativa ficam apagadas (acendem ao serem ditas)."""
+    """Bloco da legenda. Palavras depois da ativa ficam apagadas (acendem ao serem ditas).
+
+    Com "legenda_caixa" no estilo, cada linha ganha uma caixa na cor_caixa, e as cores do texto
+    passam a seguir a caixa (não o fundo da cena).
+    """
     formato = bloco.get("_formato", "A")
-    c = cores_do_tema(bloco.get("_tema", "video"), estilo, bloco.get("_fundo"))
+    tema = bloco.get("_tema", "video")
+    fundo = None
+    if estilo.get("legenda_caixa"):
+        cor_caixa = estilo["cor_caixa"]
+        tema = "claro" if eh_claro(cor_caixa) else "escuro"
+        c = cores_do_tema(tema, estilo, cor_caixa[:7])
+        fundo = {"cor": _cor(cor_caixa), "raio": int(estilo.get("raio", 24))}
+    else:
+        c = cores_do_tema(tema, estilo, bloco.get("_fundo"))
     tam, peso = LEGENDA_FORMATO.get(formato, LEGENDA_FORMATO["A"])
     tam = int(tam * _escala(estilo))
     fonte = f_texto(estilo, tam, peso)
     fonte_dest = f_destaque(estilo, int(tam * 1.15), 500)
-    claro = bloco.get("_tema") == "claro"
+    claro = tema == "claro"
+    maiuscula = _legenda_maiuscula(estilo, formato)
     pecas = []
     for k, w in enumerate(bloco["palavras"]):
         t, tipo = w["t"], w.get("tipo")
@@ -292,13 +335,13 @@ def desenhar_legenda(bloco, estilo, destino, ativa=None):
                 cor = _cor("#FFFFFF") if claro else _cor("#03332C")
         else:
             f, cor = fonte, c["texto"]
-            if formato == "C":
+            if maiuscula:
                 t = t.upper()
         if futura:
             cor = _apagar(cor)
         pecas.append(_peca(t, f, cor, **extra))
     img = Image.new("RGBA", (LARGURA, ALTURA), (0, 0, 0, 0))
-    _desenhar_linhas(img, _linhas(pecas, 920), bloco.get("_y", 1300), sombra=c["sombra"])
+    _desenhar_linhas(img, _linhas(pecas, 920), bloco.get("_y", 1300), sombra=c["sombra"], fundo=fundo)
     img.save(destino)
     return destino
 
@@ -337,10 +380,11 @@ def posicao_da_palavra(bloco, estilo, indice):
     tam, peso = LEGENDA_FORMATO.get(formato, LEGENDA_FORMATO["A"])
     tam = int(tam * _escala(estilo))
     fonte, fonte_dest = f_texto(estilo, tam, peso), f_destaque(estilo, int(tam * 1.15), 500)
+    maiuscula = _legenda_maiuscula(estilo, formato)
     pecas = []
     for w in bloco["palavras"]:
         dest = w.get("tipo") in ("destaque", "caixa", "alerta")
-        t = w["t"] if dest or formato != "C" else w["t"].upper()
+        t = w["t"].upper() if maiuscula and not dest else w["t"]
         pecas.append(_peca(t, fonte_dest if dest else fonte, (0, 0, 0, 255), **({"pad": 14} if w.get("tipo") == "caixa" else {})))
     linhas = _linhas(pecas, 920)
     metricas = [(max(p["f"].getmetrics()[0] for p in ln), max(p["f"].getmetrics()[1] for p in ln)) for ln, _ in linhas]
