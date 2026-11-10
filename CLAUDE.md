@@ -68,7 +68,7 @@ Depois abra os PNGs de `quadros/` das duas pastas e olhe de verdade: texto vazan
 4. Avise a autora se a página de divulgação (documento A4 no Claude) precisa de ajuste
 
 ## Commits
-- Autor: `Stefani Silva <stefanisilva-ia@users.noreply.github.com>`
+- Autor: `Stefanis <automacaocontato1@users.noreply.github.com>`
 - Mensagem em PT-BR: título curto + lista do que mudou.
 - Terminar com `Co-Authored-By: Claude <noreply@anthropic.com>` (ou a linha de atribuição que a sessão indicar).
 - Não commitar `.venv/`, `sons-basicos/`, `__pycache__/`, vídeos.
