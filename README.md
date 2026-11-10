@@ -68,7 +68,7 @@ Com placa NVIDIA, a transcrição usa a placa. Sem ela, roda no processador: um 
 **Mais rápido:** abra o Claude Code e cole:
 
 ```
-https://github.com/stefanisilva-ia/editar-reel-skill
+https://github.com/automacaocontato1/skill-edit-reels-ster
 
 Instala essa skill pra mim e confere as dependências.
 ```
@@ -76,16 +76,16 @@ Instala essa skill pra mim e confere as dependências.
 **Pelo terminal (Mac e Linux):**
 
 ```bash
-git clone https://github.com/stefanisilva-ia/editar-reel-skill.git
-cd editar-reel-skill
+git clone https://github.com/automacaocontato1/skill-edit-reels-ster.git
+cd skill-edit-reels-ster
 bash instalar.sh
 ```
 
 **Pelo PowerShell (Windows):**
 
 ```powershell
-git clone https://github.com/stefanisilva-ia/editar-reel-skill.git
-cd editar-reel-skill
+git clone https://github.com/automacaocontato1/skill-edit-reels-ster.git
+cd skill-edit-reels-ster
 powershell -ExecutionPolicy Bypass -File instalar.ps1
 ```
 
@@ -309,7 +309,7 @@ As fontes vêm com a skill, na pasta `editar-reel/fontes/` (Montserrat, Playfair
 Rode o instalador de novo, ou peça no Claude Code:
 
 ```
-Atualiza a skill editar-reel a partir de https://github.com/stefanisilva-ia/editar-reel-skill
+Atualiza a skill editar-reel a partir de https://github.com/automacaocontato1/skill-edit-reels-ster
 ```
 
 O instalador troca os arquivos da skill e mantém as bibliotecas já baixadas, o seu `estilo-padrao.json` e as receitas que você criou.
