@@ -3,7 +3,7 @@
 Manual de manutenção da skill. Leia antes de qualquer mudança.
 
 ## O que é
-Skill do Claude Code que edita reel falado (9:16) a partir da gravação bruta. Autora: Stefani Silva (@stefanisilva.ia, GitHub stefanisilva-ia). Licença MIT só no nome dela. Skill irmã de motion graphics: `stefanisilva-ia/motion-reel-stefani`.
+Skill do Claude Code que edita reel falado (9:16) a partir da gravação bruta. Autora: Stefani Silva (@stefanisilva.ia, GitHub automacaocontato1). Licença MIT só no nome dela. Skill irmã de motion graphics: `stefanisilva-ia/motion-reel-stefani`.
 
 ## Mapa
 ```
